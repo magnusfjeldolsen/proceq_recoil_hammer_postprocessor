@@ -42,7 +42,8 @@ class RecoilHammerApp {
                 
                 <div class="project-section">
                     <h2>Project</h2>
-                    <input type="text" class="project-field" id="project" placeholder="Enter project name (e.g., City Hall Renovation)">
+                    <input type="text" class="project-field" id="project" list="project-datalist" placeholder="Enter or select project name (e.g., City Hall Renovation)">
+                    <datalist id="project-datalist"></datalist>
                 </div>
                 
                 <div class="test-name-section">
@@ -148,7 +149,9 @@ class RecoilHammerApp {
 
         // Project dropdown
         document.getElementById('project-dropdown').addEventListener('change', (e) => {
-            this.loadTestsForProject(e.target.value);
+            const selectedProject = e.target.value;
+            document.getElementById('project').value = selectedProject;
+            this.loadTestsForProject(selectedProject);
         });
 
         // History dropdown
@@ -173,6 +176,11 @@ class RecoilHammerApp {
             if (e.target.files.length > 0) {
                 this.importTestData(e.target.files[0]);
             }
+        });
+
+        // Project field change handler
+        document.getElementById('project').addEventListener('input', (e) => {
+            this.onProjectFieldChange(e.target.value);
         });
 
         // Paste functionality for each input field
@@ -545,6 +553,7 @@ class RecoilHammerApp {
         const tests = this.getSavedTests();
         const projects = [...new Set(tests.map(test => test.project).filter(p => p))];
         
+        // Update project dropdown
         const projectDropdown = document.getElementById('project-dropdown');
         projectDropdown.innerHTML = '<option value="">Select a project...</option>';
         
@@ -553,6 +562,16 @@ class RecoilHammerApp {
             option.value = project;
             option.textContent = project;
             projectDropdown.appendChild(option);
+        });
+        
+        // Update project datalist for autocomplete
+        const projectDatalist = document.getElementById('project-datalist');
+        projectDatalist.innerHTML = '';
+        
+        projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project;
+            projectDatalist.appendChild(option);
         });
         
         // Clear test history when projects reload
@@ -802,6 +821,21 @@ class RecoilHammerApp {
         };
         
         reader.readAsText(file);
+    }
+
+    onProjectFieldChange(projectName) {
+        // Sync the project dropdown with the input field
+        const projectDropdown = document.getElementById('project-dropdown');
+        const matchingOption = Array.from(projectDropdown.options).find(option => option.value === projectName);
+        
+        if (matchingOption) {
+            projectDropdown.value = projectName;
+            this.loadTestsForProject(projectName);
+        } else {
+            // If no exact match, clear the dropdown and test history
+            projectDropdown.value = '';
+            this.loadTestsForProject('');
+        }
     }
 }
 

@@ -73,6 +73,11 @@ h1 {
     color: #888;
 }
 
+#project-datalist option {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+
 .test-name-section {
     margin-bottom: 25px;
 }
@@ -539,6 +544,11 @@ h1 {
     
     .project-field::placeholder {
         color: #888 !important;
+    }
+    
+    #project-datalist option {
+        background: #2a2a2a !important;
+        color: #ffffff !important;
     }
     
     .history-dropdown {
