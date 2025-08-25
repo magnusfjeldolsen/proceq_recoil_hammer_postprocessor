@@ -140,6 +140,8 @@ class RecoilHammerApp {
         document.querySelectorAll('input[name="testType"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 this.currentTestType = e.target.value;
+                // Redraw chart to show the selected curve highlighted
+                this.redrawChart();
             });
         });
 
@@ -352,17 +354,27 @@ class RecoilHammerApp {
         const g = svg.append('g')
             .attr('transform', `translate(${margin.left},${margin.top})`);
 
-        // Scales
-        const allR = [...refR, ...testR];
-        const allFck = [...refFck, ...testFck];
+        // Scales - include all datasets for proper scaling
+        const allRValues = [];
+        const allFckValues = [];
+        
+        // Add all reference curves
+        Object.values(datasets).forEach(dataset => {
+            allRValues.push(...dataset.r);
+            allFckValues.push(...dataset.fck);
+        });
+        
+        // Add test data
+        allRValues.push(...testR);
+        allFckValues.push(...testFck);
         
         const xScale = d3.scaleLinear()
-            .domain(d3.extent(allR))
+            .domain(d3.extent(allRValues))
             .range([0, width])
             .nice();
 
         const yScale = d3.scaleLinear()
-            .domain(d3.extent(allFck))
+            .domain(d3.extent(allFckValues))
             .range([height, 0])
             .nice();
 
@@ -408,26 +420,93 @@ class RecoilHammerApp {
             .style('fill', '#ffffff')
             .text('R-value');
 
-        // Reference curve line
+        // Line generator
         const line = d3.line()
             .x(d => xScale(d.r))
             .y(d => yScale(d.fck));
 
-        const refData = refR.map((r, i) => ({ r, fck: refFck[i] }));
-        
-        g.append('path')
-            .datum(refData)
-            .attr('class', 'reference-line')
-            .attr('d', line);
+        // Define colors for each test type
+        const curveColors = {
+            "Horizontal": "#FF9800",        // orange
+            "Vertical Downward": "#1565C0", // dark blue
+            "Vertical Upward": "#9C27B0"    // purple
+        };
 
-        // Reference points
-        g.selectAll('.reference-points')
-            .data(refData)
-            .enter().append('circle')
-            .attr('class', 'reference-points')
-            .attr('cx', d => xScale(d.r))
-            .attr('cy', d => yScale(d.fck))
-            .attr('r', 4);
+        // Draw all three curves
+        Object.keys(datasets).forEach(testType => {
+            const dataset = datasets[testType];
+            const curveData = dataset.r.map((r, i) => ({ r, fck: dataset.fck[i] }));
+            const isSelected = testType === this.currentTestType;
+            const baseColor = curveColors[testType];
+            const strokeColor = isSelected ? '#4CAF50' : baseColor;
+            const fillColor = isSelected ? '#4CAF50' : baseColor;
+            
+            // Curve line
+            g.append('path')
+                .datum(curveData)
+                .attr('class', isSelected ? 'reference-line' : 'inactive-reference-line')
+                .attr('d', line)
+                .style('stroke', strokeColor)
+                .style('stroke-width', isSelected ? 3 : 1)
+                .style('opacity', isSelected ? 1 : 0.25)
+                .style('fill', 'none'); // Ensure no fill to avoid black shaded areas
+
+            // Curve points
+            g.selectAll(`.reference-points-${testType.replace(/\s+/g, '-')}`)
+                .data(curveData)
+                .enter().append('circle')
+                .attr('class', isSelected ? 'reference-points' : 'inactive-reference-points')
+                .attr('cx', d => xScale(d.r))
+                .attr('cy', d => yScale(d.fck))
+                .attr('r', isSelected ? 5 : 2)
+                .style('fill', fillColor)
+                .style('stroke', '#ffffff')
+                .style('stroke-width', isSelected ? 2 : 0.5)
+                .style('opacity', isSelected ? 1 : 0.3);
+        });
+
+        // Add legend in upper left corner
+        const legend = g.append('g')
+            .attr('class', 'legend')
+            .attr('transform', 'translate(10, 20)');
+
+        Object.keys(datasets).forEach((testType, i) => {
+            const isSelected = testType === this.currentTestType;
+            const baseColor = curveColors[testType];
+            const legendColor = isSelected ? '#4CAF50' : baseColor;
+            const legendY = i * 20;
+
+            // Legend line
+            legend.append('line')
+                .attr('x1', 0)
+                .attr('x2', 20)
+                .attr('y1', legendY)
+                .attr('y2', legendY)
+                .style('stroke', legendColor)
+                .style('stroke-width', isSelected ? 3 : 2)
+                .style('opacity', isSelected ? 1 : 0.4);
+
+            // Legend circle
+            legend.append('circle')
+                .attr('cx', 10)
+                .attr('cy', legendY)
+                .attr('r', isSelected ? 4 : 2)
+                .style('fill', legendColor)
+                .style('stroke', '#ffffff')
+                .style('stroke-width', isSelected ? 1 : 0.5)
+                .style('opacity', isSelected ? 1 : 0.4);
+
+            // Legend text
+            legend.append('text')
+                .attr('x', 25)
+                .attr('y', legendY)
+                .attr('dy', '0.35em')
+                .style('font-size', isSelected ? '13px' : '12px')
+                .style('fill', isSelected ? '#4CAF50' : '#ffffff')
+                .style('font-weight', isSelected ? 'bold' : 'normal')
+                .style('opacity', isSelected ? 1 : 0.7)
+                .text(testType + (isSelected ? ' (Selected)' : ''));
+        });
 
         // Tooltip
         const tooltip = d3.select('body').append('div')
@@ -475,6 +554,35 @@ class RecoilHammerApp {
                     .duration(500)
                     .style('opacity', 0);
             });
+    }
+
+    redrawChart() {
+        // Get current R-values from input fields
+        const rValues = [];
+        const testFck = [];
+        
+        // Get current dataset
+        const xs = datasets[this.currentTestType]["r"];
+        const ys = datasets[this.currentTestType]["fck"];
+        
+        this.inputFields.forEach(input => {
+            const val = input.value.trim();
+            if (val) {
+                try {
+                    const r = parseFloat(val);
+                    const fck = this.interpolate(r, xs, ys);
+                    if (fck !== null) {
+                        rValues.push(r);
+                        testFck.push(fck);
+                    }
+                } catch (e) {
+                    // Skip invalid values
+                }
+            }
+        });
+        
+        // Redraw chart with current data
+        this.createChart(xs, ys, rValues, testFck);
     }
 
     clearInputs() {
