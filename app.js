@@ -23,12 +23,14 @@ class RecoilHammerApp {
     constructor() {
         this.currentTestType = "Horizontal";
         this.inputFields = [];
+        this.storageKey = 'recoilHammerTests';
         this.init();
     }
 
     init() {
         this.createUI();
         this.setupEventListeners();
+        this.loadProjects();
     }
 
     createUI() {
@@ -37,6 +39,11 @@ class RecoilHammerApp {
         app.innerHTML = `
             <div class="controls-panel">
                 <h1>Proceq Recoil Hammer Test Processor</h1>
+                
+                <div class="project-section">
+                    <h2>Project</h2>
+                    <input type="text" class="project-field" id="project" placeholder="Enter project name (e.g., City Hall Renovation)">
+                </div>
                 
                 <div class="test-name-section">
                     <h2>Test Location</h2>
@@ -68,6 +75,31 @@ class RecoilHammerApp {
                 <div class="buttons">
                     <button class="btn btn-primary" id="calculate-btn">Calculate fck</button>
                     <button class="btn btn-secondary" id="clear-btn">Clear</button>
+                </div>
+
+                <div class="history-section">
+                    <h2>Project History</h2>
+                    <select class="project-dropdown" id="project-dropdown">
+                        <option value="">Select a project...</option>
+                    </select>
+                    <div class="test-history-subsection">
+                        <h3>Tests in Project</h3>
+                        <select class="history-dropdown" id="history-dropdown">
+                            <option value="">Select a saved test...</option>
+                        </select>
+                    </div>
+                    <div class="history-buttons">
+                        <button class="btn btn-secondary btn-small" id="save-btn">Save Test</button>
+                        <button class="btn btn-secondary btn-small" id="delete-btn">Delete Selected</button>
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <div class="export-buttons">
+                        <button class="btn btn-secondary" id="export-btn">Export Project Tests</button>
+                        <input type="file" id="import-file" accept=".json" style="display: none;">
+                        <button class="btn btn-secondary" id="import-btn">Import Test Data</button>
+                    </div>
                 </div>
 
             </div>
@@ -102,6 +134,45 @@ class RecoilHammerApp {
         // Clear button
         document.getElementById('clear-btn').addEventListener('click', () => {
             this.clearInputs();
+        });
+
+        // Save button
+        document.getElementById('save-btn').addEventListener('click', () => {
+            this.saveCurrentTest();
+        });
+
+        // Delete button
+        document.getElementById('delete-btn').addEventListener('click', () => {
+            this.deleteSelectedTest();
+        });
+
+        // Project dropdown
+        document.getElementById('project-dropdown').addEventListener('change', (e) => {
+            this.loadTestsForProject(e.target.value);
+        });
+
+        // History dropdown
+        document.getElementById('history-dropdown').addEventListener('change', (e) => {
+            if (e.target.value) {
+                this.loadTest(e.target.value);
+            }
+        });
+
+        // Export button
+        document.getElementById('export-btn').addEventListener('click', () => {
+            this.exportProjectTests();
+        });
+
+        // Import button
+        document.getElementById('import-btn').addEventListener('click', () => {
+            document.getElementById('import-file').click();
+        });
+
+        // Import file handler
+        document.getElementById('import-file').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.importTestData(e.target.files[0]);
+            }
         });
 
         // Paste functionality for each input field
@@ -201,11 +272,13 @@ class RecoilHammerApp {
         const fckIs = Math.min(fckIs1, fckIs2);
 
         // Display results
-        const testLocation = document.getElementById('test-location').value;
+        const project = document.getElementById('project').value.trim();
+        const testLocation = document.getElementById('test-location').value.trim();
         let results = '';
         
-        if (testLocation.trim()) {
-            results += `Location: ${testLocation}\n`;
+        if (project || testLocation) {
+            if (project) results += `Project: ${project}\n`;
+            if (testLocation) results += `Location: ${testLocation}\n`;
             results += `Test Type: ${this.currentTestType}\n\n`;
         }
         
@@ -375,8 +448,360 @@ class RecoilHammerApp {
         this.inputFields.forEach(input => {
             input.value = '';
         });
+        document.getElementById('project').value = '';
+        document.getElementById('test-location').value = '';
         document.getElementById('results').textContent = '';
         document.getElementById('chart-container').innerHTML = '';
+        document.getElementById('project-dropdown').value = '';
+        document.getElementById('history-dropdown').value = '';
+    }
+
+    getSavedTests() {
+        const saved = localStorage.getItem(this.storageKey);
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    saveTestToStorage(tests) {
+        localStorage.setItem(this.storageKey, JSON.stringify(tests));
+    }
+
+    generateTestId() {
+        return 'test_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    getCurrentTestData() {
+        const project = document.getElementById('project').value.trim();
+        const location = document.getElementById('test-location').value.trim();
+        const rValues = [];
+        
+        this.inputFields.forEach(input => {
+            const val = parseFloat(input.value);
+            if (!isNaN(val)) {
+                rValues.push(val);
+            }
+        });
+
+        return {
+            project,
+            location,
+            testType: this.currentTestType,
+            rValues,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    saveCurrentTest() {
+        const testData = this.getCurrentTestData();
+        
+        if (!testData.project && !testData.location) {
+            alert('Please enter at least a project name or test location before saving.');
+            return;
+        }
+
+        if (testData.rValues.length === 0) {
+            alert('Please enter some R-values before saving.');
+            return;
+        }
+
+        const tests = this.getSavedTests();
+        const testId = this.generateTestId();
+        
+        const displayName = this.generateDisplayName(testData);
+        
+        tests.push({
+            id: testId,
+            displayName,
+            ...testData
+        });
+
+        this.saveTestToStorage(tests);
+        this.loadProjects();
+        
+        // Select the project and then the test
+        document.getElementById('project-dropdown').value = testData.project;
+        this.loadTestsForProject(testData.project);
+        document.getElementById('history-dropdown').value = testId;
+        
+        alert('Test saved successfully!');
+    }
+
+    generateDisplayName(testData) {
+        const date = new Date(testData.timestamp).toLocaleDateString();
+        const time = new Date(testData.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        let name = '';
+        if (testData.project) name += testData.project;
+        if (testData.location) {
+            if (name) name += ' - ';
+            name += testData.location;
+        }
+        if (name) name += ` (${date} ${time})`;
+        else name = `Test ${date} ${time}`;
+        
+        return name;
+    }
+
+    loadProjects() {
+        const tests = this.getSavedTests();
+        const projects = [...new Set(tests.map(test => test.project).filter(p => p))];
+        
+        const projectDropdown = document.getElementById('project-dropdown');
+        projectDropdown.innerHTML = '<option value="">Select a project...</option>';
+        
+        projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project;
+            option.textContent = project;
+            projectDropdown.appendChild(option);
+        });
+        
+        // Clear test history when projects reload
+        this.loadTestsForProject('');
+    }
+
+    loadTestsForProject(projectName) {
+        const tests = this.getSavedTests();
+        const projectTests = projectName ? 
+            tests.filter(test => test.project === projectName) : 
+            [];
+        
+        const dropdown = document.getElementById('history-dropdown');
+        dropdown.innerHTML = '<option value="">Select a saved test...</option>';
+        
+        projectTests.forEach(test => {
+            const option = document.createElement('option');
+            option.value = test.id;
+            option.textContent = this.generateTestDisplayName(test);
+            dropdown.appendChild(option);
+        });
+    }
+
+    generateTestDisplayName(test) {
+        const date = new Date(test.timestamp).toLocaleDateString();
+        const time = new Date(test.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        let name = '';
+        if (test.location) name += test.location;
+        if (name) name += ` (${date} ${time})`;
+        else name = `Test ${date} ${time}`;
+        
+        return name;
+    }
+
+    loadTest(testId) {
+        const tests = this.getSavedTests();
+        const test = tests.find(t => t.id === testId);
+        
+        if (!test) return;
+
+        // Load project and location
+        document.getElementById('project').value = test.project || '';
+        document.getElementById('test-location').value = test.location || '';
+        
+        // Load test type
+        this.currentTestType = test.testType;
+        document.querySelector(`input[value="${test.testType}"]`).checked = true;
+        
+        // Clear all inputs first
+        this.inputFields.forEach(input => input.value = '');
+        
+        // Load R-values
+        test.rValues.forEach((value, index) => {
+            if (index < this.inputFields.length) {
+                this.inputFields[index].value = value;
+            }
+        });
+        
+        // Clear results and chart
+        document.getElementById('results').textContent = '';
+        document.getElementById('chart-container').innerHTML = '';
+    }
+
+    deleteSelectedTest() {
+        const dropdown = document.getElementById('history-dropdown');
+        const selectedId = dropdown.value;
+        
+        if (!selectedId) {
+            alert('Please select a test to delete.');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to delete this saved test?')) {
+            return;
+        }
+
+        const tests = this.getSavedTests();
+        const filteredTests = tests.filter(test => test.id !== selectedId);
+        
+        this.saveTestToStorage(filteredTests);
+        this.loadProjects();
+        this.clearInputs();
+        
+        alert('Test deleted successfully!');
+    }
+
+    exportProjectTests() {
+        const selectedProject = document.getElementById('project-dropdown').value;
+        
+        if (!selectedProject) {
+            alert('Please select a project to export.');
+            return;
+        }
+
+        const tests = this.getSavedTests();
+        const projectTests = tests.filter(test => test.project === selectedProject);
+        
+        if (projectTests.length === 0) {
+            alert('No tests found for the selected project.');
+            return;
+        }
+
+        // Enhance tests with calculated results if they exist
+        const enhancedTests = projectTests.map(test => {
+            const enhancedTest = { ...test };
+            
+            // Try to calculate results for this test
+            try {
+                const dataset = datasets[test.testType];
+                const xs = dataset.r;
+                const ys = dataset.fck;
+                
+                const rValues = test.rValues;
+                const fckCube = [];
+                const fckCylinder = [];
+
+                rValues.forEach(r => {
+                    const fck = this.interpolate(r, xs, ys);
+                    if (fck !== null) {
+                        fckCube.push(fck);
+                        fckCylinder.push(fck / 1.25);
+                    }
+                });
+
+                if (fckCylinder.length >= 9) {
+                    const n = fckCylinder.length;
+                    const meanCylinder = fckCylinder.reduce((a, b) => a + b, 0) / n;
+                    const variance = fckCylinder.reduce((sum, val) => sum + Math.pow(val - meanCylinder, 2), 0) / (n - 1);
+                    const stdCylinder = Math.sqrt(variance);
+                    const minCylinder = Math.min(...fckCylinder);
+                    const k1 = this.getK1(n);
+
+                    const fckIs1 = meanCylinder - k1 * stdCylinder;
+                    const fckIs2 = minCylinder + 4;
+                    const fckIs = Math.min(fckIs1, fckIs2);
+
+                    enhancedTest.calculatedResults = {
+                        fckCube,
+                        fckCylinder,
+                        statistics: {
+                            n,
+                            k1,
+                            mean: meanCylinder,
+                            stdDev: stdCylinder,
+                            min: minCylinder,
+                            fckIs1,
+                            fckIs2,
+                            finalFckIs: fckIs
+                        }
+                    };
+                }
+            } catch (error) {
+                // If calculation fails, just export without results
+            }
+
+            return enhancedTest;
+        });
+
+        const exportData = {
+            projectName: selectedProject,
+            exportDate: new Date().toISOString(),
+            testCount: enhancedTests.length,
+            tests: enhancedTests
+        };
+
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${selectedProject.replace(/[^a-zA-Z0-9]/g, '_')}_tests_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert(`Exported ${enhancedTests.length} tests from project "${selectedProject}".`);
+    }
+
+    importTestData(file) {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            try {
+                const importData = JSON.parse(e.target.result);
+                
+                if (!importData.tests || !Array.isArray(importData.tests)) {
+                    throw new Error('Invalid file format: missing tests array');
+                }
+
+                const existingTests = this.getSavedTests();
+                let importedCount = 0;
+                let skippedCount = 0;
+
+                importData.tests.forEach(importTest => {
+                    // Validate required fields
+                    if (!importTest.project || !importTest.rValues || !Array.isArray(importTest.rValues)) {
+                        skippedCount++;
+                        return;
+                    }
+
+                    // Check if test already exists (same project, location, testType, and rValues)
+                    const duplicate = existingTests.find(existing => 
+                        existing.project === importTest.project &&
+                        existing.location === importTest.location &&
+                        existing.testType === importTest.testType &&
+                        JSON.stringify(existing.rValues) === JSON.stringify(importTest.rValues)
+                    );
+
+                    if (duplicate) {
+                        skippedCount++;
+                        return;
+                    }
+
+                    // Create new test with fresh ID and timestamp
+                    const newTest = {
+                        id: this.generateTestId(),
+                        displayName: this.generateDisplayName({
+                            project: importTest.project,
+                            location: importTest.location,
+                            timestamp: new Date().toISOString()
+                        }),
+                        project: importTest.project,
+                        location: importTest.location || '',
+                        testType: importTest.testType || 'Horizontal',
+                        rValues: importTest.rValues,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    existingTests.push(newTest);
+                    importedCount++;
+                });
+
+                this.saveTestToStorage(existingTests);
+                this.loadProjects();
+                
+                alert(`Import completed!\nImported: ${importedCount} tests\nSkipped: ${skippedCount} tests (duplicates or invalid)`);
+                
+            } catch (error) {
+                alert(`Import failed: ${error.message}`);
+            }
+            
+            // Clear the file input
+            document.getElementById('import-file').value = '';
+        };
+        
+        reader.readAsText(file);
     }
 }
 

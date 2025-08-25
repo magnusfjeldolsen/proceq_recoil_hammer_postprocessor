@@ -42,6 +42,37 @@ h1 {
     font-weight: 600;
 }
 
+.project-section {
+    margin-bottom: 25px;
+}
+
+.project-section h2 {
+    color: #ffffff;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.project-field {
+    width: 100%;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.project-field:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.project-field::placeholder {
+    color: #888;
+}
+
 .test-name-section {
     margin-bottom: 25px;
 }
@@ -110,6 +141,97 @@ h1 {
 .radio-option label {
     cursor: pointer;
     color: #ffffff;
+}
+
+.history-section {
+    margin-bottom: 25px;
+}
+
+.history-section h2 {
+    color: #ffffff;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.history-dropdown {
+    width: 100%;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 10px;
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.history-dropdown:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.history-dropdown option {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+
+.project-dropdown {
+    width: 100%;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 10px;
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.project-dropdown:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.project-dropdown option {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+
+.test-history-subsection {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #444;
+}
+
+.test-history-subsection h3 {
+    color: #ffffff;
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: normal;
+}
+
+.history-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-small {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+.export-section {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .input-section h2 {
@@ -407,6 +529,42 @@ h1 {
     
     .test-name-field::placeholder {
         color: #888 !important;
+    }
+    
+    .project-field {
+        background: #2a2a2a !important;
+        border: 1px solid #444 !important;
+        color: #ffffff !important;
+    }
+    
+    .project-field::placeholder {
+        color: #888 !important;
+    }
+    
+    .history-dropdown {
+        background: #2a2a2a !important;
+        border: 1px solid #444 !important;
+        color: #ffffff !important;
+    }
+    
+    .history-dropdown option {
+        background: #2a2a2a !important;
+        color: #ffffff !important;
+    }
+    
+    .project-dropdown {
+        background: #2a2a2a !important;
+        border: 1px solid #444 !important;
+        color: #ffffff !important;
+    }
+    
+    .project-dropdown option {
+        background: #2a2a2a !important;
+        color: #ffffff !important;
+    }
+    
+    .test-history-subsection h3 {
+        color: #ffffff !important;
     }
 }
 
