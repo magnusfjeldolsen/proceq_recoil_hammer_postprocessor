@@ -35,6 +35,35 @@ body {
     border: 1px solid #333;
 }
 
+.logo-section {
+    margin-bottom: 20px;
+}
+
+.logo-button {
+    display: block;
+    text-decoration: none;
+    transition: transform 0.2s;
+    width: fit-content;
+}
+
+.logo-button:hover {
+    transform: scale(1.05);
+}
+
+.logo-image {
+    max-height: 60px;
+    width: auto;
+    display: block;
+}
+
+.credits {
+    margin-top: 5px;
+    font-size: 11px;
+    color: #888;
+    text-align: left;
+    line-height: 1.2;
+}
+
 h1 {
     color: #4CAF50;
     margin-bottom: 25px;
@@ -512,6 +541,18 @@ h1 {
     
     h1, h2 {
         color: #4CAF50 !important;
+    }
+    
+    .logo-button {
+        display: block !important;
+    }
+    
+    .logo-image {
+        max-height: 60px !important;
+    }
+    
+    .credits {
+        color: #888 !important;
     }
     
     .chart-title {

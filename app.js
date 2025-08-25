@@ -38,6 +38,13 @@ class RecoilHammerApp {
         
         app.innerHTML = `
             <div class="controls-panel">
+                <div class="logo-section">
+                    <a href="http://www.tommerdal.no" target="_blank" class="logo-button">
+                        <img src="assets/LogoTC.png" alt="Tømmerdal Consult" class="logo-image">
+                    </a>
+                    <div class="credits">Developed by Tømmerdal Consult AS</div>
+                </div>
+                
                 <h1>Proceq Recoil Hammer Test Processor</h1>
                 
                 <div class="project-section">
