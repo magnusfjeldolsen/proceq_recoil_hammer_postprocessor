@@ -1010,8 +1010,8 @@ class RecoilHammerApp {
 
         // Encode the data for URL
         const encodedData = btoa(JSON.stringify(shareData));
-        const currentUrl = window.location.href.split('?')[0]; // Remove existing parameters
-        const shareUrl = `${currentUrl}?share=${encodedData}`;
+        const baseUrl = 'https://magnusfjeldolsen.github.io/proceq_recoil_hammer_postprocessor/';
+        const shareUrl = `${baseUrl}?share=${encodedData}`;
 
         // Copy to clipboard and show dialog
         navigator.clipboard.writeText(shareUrl).then(() => {
@@ -1076,8 +1076,8 @@ class RecoilHammerApp {
 
         // Encode the data for URL
         const encodedData = btoa(JSON.stringify(shareData));
-        const currentUrl = window.location.href.split('?')[0]; // Remove existing parameters
-        const shareUrl = `${currentUrl}?share=${encodedData}`;
+        const baseUrl = 'https://magnusfjeldolsen.github.io/proceq_recoil_hammer_postprocessor/';
+        const shareUrl = `${baseUrl}?share=${encodedData}`;
 
         // Copy to clipboard and show dialog
         navigator.clipboard.writeText(shareUrl).then(() => {
