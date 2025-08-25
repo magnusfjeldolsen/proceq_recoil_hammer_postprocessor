@@ -38,6 +38,11 @@ class RecoilHammerApp {
             <div class="controls-panel">
                 <h1>Proceq Recoil Hammer Test Processor</h1>
                 
+                <div class="test-name-section">
+                    <h2>Test Location</h2>
+                    <input type="text" class="test-name-field" id="test-location" placeholder="Enter test location (e.g., Building A - Floor 2)">
+                </div>
+                
                 <div class="test-type-section">
                     <h2>Test Orientation</h2>
                     <div class="radio-group">
@@ -65,15 +70,16 @@ class RecoilHammerApp {
                     <button class="btn btn-secondary" id="clear-btn">Clear</button>
                 </div>
 
-                <div class="results-section">
-                    <h2>Results</h2>
-                    <div class="results-display" id="results"></div>
-                </div>
             </div>
 
             <div class="chart-panel">
                 <h2 class="chart-title">Reference Curve and Test Points</h2>
                 <div id="chart-container"></div>
+                
+                <div class="results-section">
+                    <h2>Results</h2>
+                    <div class="results-display" id="results"></div>
+                </div>
             </div>
         `;
 
@@ -195,7 +201,15 @@ class RecoilHammerApp {
         const fckIs = Math.min(fckIs1, fckIs2);
 
         // Display results
-        let results = `${'R'.padStart(8)} ${'fck_cube150'.padStart(12)} ${'fck_cylinder'.padStart(14)}\n`;
+        const testLocation = document.getElementById('test-location').value;
+        let results = '';
+        
+        if (testLocation.trim()) {
+            results += `Location: ${testLocation}\n`;
+            results += `Test Type: ${this.currentTestType}\n\n`;
+        }
+        
+        results += `${'R'.padStart(8)} ${'fck_cube150'.padStart(12)} ${'fck_cylinder'.padStart(14)}\n`;
         
         rValues.forEach((r, i) => {
             results += `${r.toFixed(2).padStart(8)} ${fckCube[i].toFixed(2).padStart(12)} ${fckCylinder[i].toFixed(2).padStart(14)}\n`;
