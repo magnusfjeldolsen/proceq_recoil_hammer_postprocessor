@@ -31,6 +31,7 @@ class RecoilHammerApp {
         this.createUI();
         this.setupEventListeners();
         this.loadProjects();
+        this.checkForSharedProject();
     }
 
     createUI() {
@@ -47,17 +48,40 @@ class RecoilHammerApp {
                 
                 <h1>Proceq Recoil Hammer Test Processor</h1>
                 
-                <div class="project-section">
-                    <h2>Project</h2>
-                    <input type="text" class="project-field" id="project" list="project-datalist" placeholder="Enter or select project name (e.g., City Hall Renovation)">
-                    <datalist id="project-datalist"></datalist>
+                <div class="project-location-section">
+                    <h2>Test Information</h2>
+                    <div class="field-group">
+                        <label for="project">Project</label>
+                        <input type="text" class="project-field" id="project" list="project-datalist" placeholder="Enter or select project name">
+                        <datalist id="project-datalist"></datalist>
+                    </div>
+                    <div class="field-group">
+                        <label for="test-location">Test Location</label>
+                        <div class="location-input-wrapper">
+                            <input type="text" class="test-location-field" id="test-location" list="location-datalist" placeholder="Enter or select test location">
+                            <button type="button" class="clear-btn-small" id="clear-location-btn" title="Clear location">×</button>
+                            <datalist id="location-datalist"></datalist>
+                        </div>
+                    </div>
+                    
+                    <div class="save-buttons">
+                        <button class="btn btn-secondary btn-small" id="save-btn">Save Test</button>
+                        <button class="btn btn-secondary btn-small" id="delete-btn">Delete Test</button>
+                    </div>
+                    <div class="privacy-notice">
+                        <span class="privacy-icon">🔒</span>
+                        Tests are saved locally on your computer
+                    </div>
                 </div>
                 
-                <div class="test-name-section">
-                    <h2>Test Location</h2>
-                    <input type="text" class="test-name-field" id="test-location" placeholder="Enter test location (e.g., Building A - Floor 2)">
+                <div class="dataset-section">
+                    <h2>Reference Dataset</h2>
+                    <div class="dataset-display">
+                        <span class="dataset-name">Proceq Original Schmidt</span>
+                        <span class="dataset-description">(Standard Proceq Schmidt Hammer R-fck_cube150-curves)</span>
+                    </div>
                 </div>
-                
+
                 <div class="test-type-section">
                     <h2>Test Orientation</h2>
                     <div class="radio-group">
@@ -85,28 +109,13 @@ class RecoilHammerApp {
                     <button class="btn btn-secondary" id="clear-btn">Clear</button>
                 </div>
 
-                <div class="history-section">
-                    <h2>Project History</h2>
-                    <select class="project-dropdown" id="project-dropdown">
-                        <option value="">Select a project...</option>
-                    </select>
-                    <div class="test-history-subsection">
-                        <h3>Tests in Project</h3>
-                        <select class="history-dropdown" id="history-dropdown">
-                            <option value="">Select a saved test...</option>
-                        </select>
-                    </div>
-                    <div class="history-buttons">
-                        <button class="btn btn-secondary btn-small" id="save-btn">Save Test</button>
-                        <button class="btn btn-secondary btn-small" id="delete-btn">Delete Selected</button>
-                    </div>
-                </div>
-
                 <div class="export-section">
                     <div class="export-buttons">
                         <button class="btn btn-secondary" id="export-btn">Export Project Tests</button>
                         <input type="file" id="import-file" accept=".json" style="display: none;">
                         <button class="btn btn-secondary" id="import-btn">Import Test Data</button>
+                        <button class="btn btn-secondary" id="share-btn">Share Project</button>
+                        <button class="btn btn-secondary" id="share-test-btn">Share Test</button>
                     </div>
                 </div>
 
@@ -154,19 +163,6 @@ class RecoilHammerApp {
             this.deleteSelectedTest();
         });
 
-        // Project dropdown
-        document.getElementById('project-dropdown').addEventListener('change', (e) => {
-            const selectedProject = e.target.value;
-            document.getElementById('project').value = selectedProject;
-            this.loadTestsForProject(selectedProject);
-        });
-
-        // History dropdown
-        document.getElementById('history-dropdown').addEventListener('change', (e) => {
-            if (e.target.value) {
-                this.loadTest(e.target.value);
-            }
-        });
 
         // Export button
         document.getElementById('export-btn').addEventListener('click', () => {
@@ -185,9 +181,31 @@ class RecoilHammerApp {
             }
         });
 
+        // Share project button
+        document.getElementById('share-btn').addEventListener('click', () => {
+            this.shareProject();
+        });
+
+        // Share test button
+        document.getElementById('share-test-btn').addEventListener('click', () => {
+            this.shareTest();
+        });
+
         // Project field change handler
         document.getElementById('project').addEventListener('input', (e) => {
             this.onProjectFieldChange(e.target.value);
+        });
+
+        // Test location field change handler
+        document.getElementById('test-location').addEventListener('input', (e) => {
+            this.onLocationFieldChange();
+        });
+
+        // Clear location button
+        document.getElementById('clear-location-btn').addEventListener('click', (e) => {
+            document.getElementById('test-location').value = '';
+            document.getElementById('test-location').focus();
+            this.updateLocationDatalist();
         });
 
         // Paste functionality for each input field
@@ -467,8 +485,6 @@ class RecoilHammerApp {
         document.getElementById('test-location').value = '';
         document.getElementById('results').textContent = '';
         document.getElementById('chart-container').innerHTML = '';
-        document.getElementById('project-dropdown').value = '';
-        document.getElementById('history-dropdown').value = '';
     }
 
     getSavedTests() {
@@ -519,25 +535,100 @@ class RecoilHammerApp {
         }
 
         const tests = this.getSavedTests();
-        const testId = this.generateTestId();
         
-        const displayName = this.generateDisplayName(testData);
-        
-        tests.push({
-            id: testId,
-            displayName,
-            ...testData
-        });
+        // Check if a test with the same project and location already exists
+        const existingTestIndex = tests.findIndex(test => 
+            test.project === testData.project && test.location === testData.location
+        );
 
-        this.saveTestToStorage(tests);
-        this.loadProjects();
-        
-        // Select the project and then the test
-        document.getElementById('project-dropdown').value = testData.project;
-        this.loadTestsForProject(testData.project);
-        document.getElementById('history-dropdown').value = testId;
-        
-        alert('Test saved successfully!');
+        if (existingTestIndex !== -1) {
+            // Test location already exists - ask user what to do
+            const existingTest = tests[existingTestIndex];
+            const existingDate = new Date(existingTest.timestamp).toLocaleDateString();
+            const existingTime = new Date(existingTest.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const choice = confirm(
+                `A test already exists for:\n` +
+                `Project: ${testData.project}\n` +
+                `Location: ${testData.location}\n` +
+                `Saved: ${existingDate} ${existingTime}\n\n` +
+                `Click OK to overwrite the existing test\n` +
+                `Click Cancel to save with a different name`
+            );
+
+            if (choice) {
+                // User wants to overwrite - replace existing test
+                const testId = existingTest.id; // Keep the same ID
+                const displayName = this.generateDisplayName(testData);
+                
+                tests[existingTestIndex] = {
+                    id: testId,
+                    displayName,
+                    ...testData
+                };
+                
+                this.saveTestToStorage(tests);
+                this.loadProjects();
+                alert('Test overwritten successfully!');
+            } else {
+                // User wants to save with different name
+                this.saveWithDifferentName(testData, tests);
+            }
+        } else {
+            // No existing test - save normally
+            const testId = this.generateTestId();
+            const displayName = this.generateDisplayName(testData);
+            
+            tests.push({
+                id: testId,
+                displayName,
+                ...testData
+            });
+
+            this.saveTestToStorage(tests);
+            this.loadProjects();
+            alert('Test saved successfully!');
+        }
+    }
+
+    saveWithDifferentName(testData, tests) {
+        const newLocation = prompt(
+            `Please enter a different test location:\n` +
+            `Current: ${testData.location}`,
+            testData.location + ' - Copy'
+        );
+
+        if (newLocation && newLocation.trim() !== '') {
+            const newTestData = { ...testData, location: newLocation.trim() };
+            
+            // Check if the new location also exists
+            const stillExists = tests.some(test => 
+                test.project === newTestData.project && test.location === newTestData.location
+            );
+
+            if (stillExists) {
+                alert('That location name is also already used. Please try saving again with a different location.');
+                return;
+            }
+
+            // Save with new location
+            const testId = this.generateTestId();
+            const displayName = this.generateDisplayName(newTestData);
+            
+            tests.push({
+                id: testId,
+                displayName,
+                ...newTestData
+            });
+
+            this.saveTestToStorage(tests);
+            this.loadProjects();
+            
+            // Update the UI to show the new location
+            document.getElementById('test-location').value = newTestData.location;
+            
+            alert('Test saved with new location successfully!');
+        }
     }
 
     generateDisplayName(testData) {
@@ -560,17 +651,6 @@ class RecoilHammerApp {
         const tests = this.getSavedTests();
         const projects = [...new Set(tests.map(test => test.project).filter(p => p))];
         
-        // Update project dropdown
-        const projectDropdown = document.getElementById('project-dropdown');
-        projectDropdown.innerHTML = '<option value="">Select a project...</option>';
-        
-        projects.forEach(project => {
-            const option = document.createElement('option');
-            option.value = project;
-            option.textContent = project;
-            projectDropdown.appendChild(option);
-        });
-        
         // Update project datalist for autocomplete
         const projectDatalist = document.getElementById('project-datalist');
         projectDatalist.innerHTML = '';
@@ -581,38 +661,38 @@ class RecoilHammerApp {
             projectDatalist.appendChild(option);
         });
         
-        // Clear test history when projects reload
-        this.loadTestsForProject('');
+        // Update location datalist based on current project
+        this.updateLocationDatalist();
     }
 
-    loadTestsForProject(projectName) {
+    updateLocationDatalist() {
+        const currentProject = document.getElementById('project').value.trim();
         const tests = this.getSavedTests();
-        const projectTests = projectName ? 
-            tests.filter(test => test.project === projectName) : 
-            [];
         
-        const dropdown = document.getElementById('history-dropdown');
-        dropdown.innerHTML = '<option value="">Select a saved test...</option>';
+        let locations;
+        if (currentProject) {
+            // Show only locations from the current project
+            locations = [...new Set(
+                tests
+                    .filter(test => test.project === currentProject)
+                    .map(test => test.location)
+                    .filter(l => l)
+            )];
+        } else {
+            // Show all locations if no project is selected
+            locations = [...new Set(tests.map(test => test.location).filter(l => l))];
+        }
         
-        projectTests.forEach(test => {
+        const locationDatalist = document.getElementById('location-datalist');
+        locationDatalist.innerHTML = '';
+        
+        locations.forEach(location => {
             const option = document.createElement('option');
-            option.value = test.id;
-            option.textContent = this.generateTestDisplayName(test);
-            dropdown.appendChild(option);
+            option.value = location;
+            locationDatalist.appendChild(option);
         });
     }
 
-    generateTestDisplayName(test) {
-        const date = new Date(test.timestamp).toLocaleDateString();
-        const time = new Date(test.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        let name = '';
-        if (test.location) name += test.location;
-        if (name) name += ` (${date} ${time})`;
-        else name = `Test ${date} ${time}`;
-        
-        return name;
-    }
 
     loadTest(testId) {
         const tests = this.getSavedTests();
@@ -643,31 +723,46 @@ class RecoilHammerApp {
         document.getElementById('chart-container').innerHTML = '';
     }
 
-    deleteSelectedTest() {
-        const dropdown = document.getElementById('history-dropdown');
-        const selectedId = dropdown.value;
-        
-        if (!selectedId) {
-            alert('Please select a test to delete.');
-            return;
-        }
 
-        if (!confirm('Are you sure you want to delete this saved test?')) {
+    deleteSelectedTest() {
+        // Since we don't have dropdowns anymore, we need to find tests that match current form data
+        const project = document.getElementById('project').value.trim();
+        const location = document.getElementById('test-location').value.trim();
+        
+        if (!project && !location) {
+            alert('Please enter project and/or location information to identify which test to delete.');
             return;
         }
 
         const tests = this.getSavedTests();
-        const filteredTests = tests.filter(test => test.id !== selectedId);
-        
-        this.saveTestToStorage(filteredTests);
-        this.loadProjects();
-        this.clearInputs();
-        
-        alert('Test deleted successfully!');
+        const matchingTests = tests.filter(test => 
+            (project === '' || test.project === project) &&
+            (location === '' || test.location === location)
+        );
+
+        if (matchingTests.length === 0) {
+            alert('No saved tests found matching the current project/location.');
+            return;
+        }
+
+        if (matchingTests.length === 1) {
+            const testToDelete = matchingTests[0];
+            if (!confirm(`Are you sure you want to delete the test from "${testToDelete.project}" - "${testToDelete.location}"?`)) {
+                return;
+            }
+            
+            const filteredTests = tests.filter(test => test.id !== testToDelete.id);
+            this.saveTestToStorage(filteredTests);
+            this.loadProjects();
+            this.clearInputs();
+            alert('Test deleted successfully!');
+        } else {
+            alert(`Found ${matchingTests.length} tests matching these criteria. Please be more specific with project and location.`);
+        }
     }
 
     exportProjectTests() {
-        const selectedProject = document.getElementById('project-dropdown').value;
+        const selectedProject = document.getElementById('project').value.trim();
         
         if (!selectedProject) {
             alert('Please select a project to export.');
@@ -831,17 +926,343 @@ class RecoilHammerApp {
     }
 
     onProjectFieldChange(projectName) {
-        // Sync the project dropdown with the input field
-        const projectDropdown = document.getElementById('project-dropdown');
-        const matchingOption = Array.from(projectDropdown.options).find(option => option.value === projectName);
+        // Update location datalist to show only locations from this project
+        this.updateLocationDatalist();
+        // Auto-load test when project changes
+        this.autoLoadTest();
+    }
+
+    onLocationFieldChange() {
+        // Auto-load test when location changes
+        this.autoLoadTest();
+    }
+
+    autoLoadTest() {
+        const project = document.getElementById('project').value.trim();
+        const location = document.getElementById('test-location').value.trim();
         
-        if (matchingOption) {
-            projectDropdown.value = projectName;
-            this.loadTestsForProject(projectName);
+        // Only auto-load if both fields have values
+        if (!project || !location) {
+            return;
+        }
+
+        const tests = this.getSavedTests();
+        const matchingTests = tests.filter(test => 
+            test.project === project && test.location === location
+        );
+
+        if (matchingTests.length === 1) {
+            // Exact match found - load it automatically
+            const testToLoad = matchingTests[0];
+            
+            // Load test type
+            this.currentTestType = testToLoad.testType;
+            document.querySelector(`input[value="${testToLoad.testType}"]`).checked = true;
+            
+            // Clear all inputs first
+            this.inputFields.forEach(input => input.value = '');
+            
+            // Load R-values
+            testToLoad.rValues.forEach((value, index) => {
+                if (index < this.inputFields.length) {
+                    this.inputFields[index].value = value;
+                }
+            });
+            
+            // Clear previous results and chart
+            document.getElementById('results').textContent = '';
+            document.getElementById('chart-container').innerHTML = '';
+            
+            // Auto-calculate results after loading test data
+            setTimeout(() => {
+                this.calculate();
+            }, 100); // Small delay to ensure all fields are updated
+        }
+    }
+
+    shareProject() {
+        const project = document.getElementById('project').value.trim();
+        
+        if (!project) {
+            alert('Please select a project to share.');
+            return;
+        }
+
+        const tests = this.getSavedTests();
+        const projectTests = tests.filter(test => test.project === project);
+        
+        if (projectTests.length === 0) {
+            alert('No tests found for the selected project.');
+            return;
+        }
+
+        // Create shareable data
+        const shareData = {
+            projectName: project,
+            shareDate: new Date().toISOString(),
+            tests: projectTests.map(test => ({
+                location: test.location,
+                testType: test.testType,
+                rValues: test.rValues,
+                timestamp: test.timestamp
+            }))
+        };
+
+        // Encode the data for URL
+        const encodedData = btoa(JSON.stringify(shareData));
+        const currentUrl = window.location.href.split('?')[0]; // Remove existing parameters
+        const shareUrl = `${currentUrl}?share=${encodedData}`;
+
+        // Copy to clipboard and show dialog
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert(
+                `Project "${project}" is ready to share!\n\n` +
+                `The shareable URL has been copied to your clipboard.\n\n` +
+                `This link contains:\n` +
+                `• ${projectTests.length} test location(s)\n` +
+                `• All R-values and test orientations\n` +
+                `• Original timestamps\n\n` +
+                `Anyone with this link can view your project data.`
+            );
+        }).catch(() => {
+            // Fallback for browsers that don't support clipboard API
+            prompt(
+                `Copy this URL to share the project "${project}":`,
+                shareUrl
+            );
+        });
+    }
+
+    shareTest() {
+        const project = document.getElementById('project').value.trim();
+        const location = document.getElementById('test-location').value.trim();
+        
+        if (!project) {
+            alert('Please enter a project name to share the test.');
+            return;
+        }
+        
+        if (!location) {
+            alert('Please enter a test location to share the test.');
+            return;
+        }
+
+        // Get current R-values from input fields
+        const rValues = [];
+        for (let i = 0; i < this.inputFields.length; i++) {
+            const value = this.inputFields[i].value.trim();
+            if (value) {
+                const num = parseFloat(value);
+                if (!isNaN(num)) {
+                    rValues.push(num);
+                }
+            }
+        }
+
+        if (rValues.length === 0) {
+            alert('Please enter some R-values to share the test.');
+            return;
+        }
+
+        // Create shareable test data
+        const shareData = {
+            type: 'test', // Flag to distinguish from project shares
+            projectName: project,
+            location: location,
+            testType: this.currentTestType,
+            rValues: rValues,
+            shareDate: new Date().toISOString()
+        };
+
+        // Encode the data for URL
+        const encodedData = btoa(JSON.stringify(shareData));
+        const currentUrl = window.location.href.split('?')[0]; // Remove existing parameters
+        const shareUrl = `${currentUrl}?share=${encodedData}`;
+
+        // Copy to clipboard and show dialog
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert(
+                `Test "${location}" from project "${project}" is ready to share!\n\n` +
+                `The shareable URL has been copied to your clipboard.\n\n` +
+                `This link contains:\n` +
+                `• Project: ${project}\n` +
+                `• Location: ${location}\n` +
+                `• Test Type: ${this.currentTestType}\n` +
+                `• ${rValues.length} R-values\n\n` +
+                `Anyone with this link can view this specific test.`
+            );
+        }).catch(() => {
+            // Fallback for browsers that don't support clipboard API
+            prompt(
+                `Copy this URL to share the test "${location}" from project "${project}":`,
+                shareUrl
+            );
+        });
+    }
+
+    checkForSharedProject() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedData = urlParams.get('share');
+        
+        if (sharedData) {
+            try {
+                const decodedData = JSON.parse(atob(sharedData));
+                
+                // Check if it's a single test or project share
+                if (decodedData.type === 'test') {
+                    this.loadSharedTest(decodedData);
+                } else {
+                    this.loadSharedProject(decodedData);
+                }
+            } catch (error) {
+                console.error('Invalid shared data:', error);
+                alert('The shared link appears to be invalid.');
+            }
+        }
+    }
+
+    loadSharedProject(shareData) {
+        if (!shareData.projectName || !shareData.tests) {
+            alert('Invalid shared project data.');
+            return;
+        }
+
+        // Ask user if they want to load the shared project
+        const shareDate = new Date(shareData.shareDate).toLocaleDateString();
+        const choice = confirm(
+            `Load shared project?\n\n` +
+            `Project: ${shareData.projectName}\n` +
+            `Shared: ${shareDate}\n` +
+            `Test locations: ${shareData.tests.length}\n\n` +
+            `This will temporarily load the shared project data.\n` +
+            `Your existing data will not be affected.`
+        );
+
+        if (!choice) return;
+
+        // Load the shared project data (temporarily, not saved to localStorage)
+        this.currentSharedProject = shareData;
+        
+        // Update the project field and populate autocomplete
+        document.getElementById('project').value = shareData.projectName;
+        
+        // Update location datalist with shared project locations
+        const locationDatalist = document.getElementById('location-datalist');
+        locationDatalist.innerHTML = '';
+        
+        shareData.tests.forEach(test => {
+            const option = document.createElement('option');
+            option.value = test.location;
+            locationDatalist.appendChild(option);
+        });
+
+        // Load the first test automatically if there's only one
+        if (shareData.tests.length === 1) {
+            this.loadSharedTest(shareData.tests[0]);
         } else {
-            // If no exact match, clear the dropdown and test history
-            projectDropdown.value = '';
-            this.loadTestsForProject('');
+            alert(`Shared project loaded!\n\nSelect a test location to see the data:\n${shareData.tests.map(t => '• ' + t.location).join('\n')}`);
+        }
+    }
+
+    loadSharedTest(testData) {
+        // Check if this is a single test share or part of a project share
+        const projectName = testData.projectName || (this.currentSharedProject && this.currentSharedProject.projectName);
+        const location = testData.location;
+        
+        if (testData.type === 'test') {
+            // This is a direct test share, ask user if they want to load it
+            const shareDate = new Date(testData.shareDate).toLocaleDateString();
+            const choice = confirm(
+                `Load shared test?\n\n` +
+                `Project: ${projectName}\n` +
+                `Location: ${location}\n` +
+                `Test Type: ${testData.testType}\n` +
+                `R-values: ${testData.rValues.length}\n` +
+                `Shared: ${shareDate}\n\n` +
+                `This will load the test data into the current form.\n` +
+                `Any unsaved changes will be lost.`
+            );
+            
+            if (!choice) {
+                return;
+            }
+        }
+        
+        // Set project and location
+        document.getElementById('project').value = projectName;
+        document.getElementById('test-location').value = location;
+        
+        // Set test type
+        this.currentTestType = testData.testType;
+        document.querySelector(`input[value="${testData.testType}"]`).checked = true;
+        
+        // Clear and load R-values
+        this.inputFields.forEach(input => input.value = '');
+        testData.rValues.forEach((value, index) => {
+            if (index < this.inputFields.length) {
+                this.inputFields[index].value = value;
+            }
+        });
+        
+        // Auto-calculate if we have enough data
+        if (testData.rValues.length >= 9) {
+            setTimeout(() => {
+                this.calculate();
+            }, 100);
+        }
+    }
+
+    // Override autoLoadTest to handle shared projects
+    autoLoadTest() {
+        const project = document.getElementById('project').value.trim();
+        const location = document.getElementById('test-location').value.trim();
+        
+        // Only auto-load if both fields have values
+        if (!project || !location) {
+            return;
+        }
+
+        // Check if we're working with a shared project
+        if (this.currentSharedProject && this.currentSharedProject.projectName === project) {
+            const sharedTest = this.currentSharedProject.tests.find(test => test.location === location);
+            if (sharedTest) {
+                this.loadSharedTest(sharedTest);
+                return;
+            }
+        }
+
+        // Normal auto-load logic for saved tests
+        const tests = this.getSavedTests();
+        const matchingTests = tests.filter(test => 
+            test.project === project && test.location === location
+        );
+
+        if (matchingTests.length === 1) {
+            // Exact match found - load it automatically
+            const testToLoad = matchingTests[0];
+            
+            // Load test type
+            this.currentTestType = testToLoad.testType;
+            document.querySelector(`input[value="${testToLoad.testType}"]`).checked = true;
+            
+            // Clear all inputs first
+            this.inputFields.forEach(input => input.value = '');
+            
+            // Load R-values
+            testToLoad.rValues.forEach((value, index) => {
+                if (index < this.inputFields.length) {
+                    this.inputFields[index].value = value;
+                }
+            });
+            
+            // Clear previous results and chart
+            document.getElementById('results').textContent = '';
+            document.getElementById('chart-container').innerHTML = '';
+            
+            // Auto-calculate results after loading test data
+            setTimeout(() => {
+                this.calculate();
+            }, 100); // Small delay to ensure all fields are updated
         }
     }
 }

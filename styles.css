@@ -71,17 +71,46 @@ h1 {
     font-weight: 600;
 }
 
-.project-section {
+.export-section {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: rgba(76, 175, 80, 0.05);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+    border-radius: 8px;
+}
+
+.save-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    margin-top: 10px;
+}
+
+.project-location-section {
     margin-bottom: 25px;
 }
 
-.project-section h2 {
+.project-location-section h2 {
     color: #ffffff;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     font-size: 18px;
 }
 
-.project-field {
+.field-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.field-group label {
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.project-field,
+.test-location-field {
     width: 100%;
     background: #2a2a2a;
     border: 1px solid #444;
@@ -92,50 +121,94 @@ h1 {
     transition: border-color 0.2s;
 }
 
-.project-field:focus {
+.project-field:focus,
+.test-location-field:focus {
     outline: none;
     border-color: #4CAF50;
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
-.project-field::placeholder {
+.project-field::placeholder,
+.test-location-field::placeholder {
     color: #888;
 }
 
-#project-datalist option {
+.location-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.location-input-wrapper .test-location-field {
+    flex: 1;
+    padding-right: 35px; /* Make room for clear button */
+}
+
+.clear-btn-small {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: #555;
+    color: #ffffff;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background-color 0.2s;
+}
+
+.clear-btn-small:hover {
+    background: #666;
+}
+
+.clear-btn-small:active {
+    background: #777;
+}
+
+#project-datalist option,
+#location-datalist option {
     background: #2a2a2a;
     color: #ffffff;
 }
 
-.test-name-section {
-    margin-bottom: 25px;
+.dataset-section {
+    margin-bottom: 20px;
+    padding: 12px;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 6px;
 }
 
-.test-name-section h2 {
+.dataset-section h2 {
     color: #ffffff;
     margin-bottom: 10px;
-    font-size: 18px;
+    font-size: 16px;
 }
 
-.test-name-field {
-    width: 100%;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 6px;
-    padding: 12px;
-    color: #ffffff;
+.dataset-display {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dataset-name {
+    color: #4CAF50;
+    font-weight: 600;
     font-size: 14px;
-    transition: border-color 0.2s;
 }
 
-.test-name-field:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-.test-name-field::placeholder {
+.dataset-description {
     color: #888;
+    font-size: 12px;
+    font-style: italic;
 }
 
 .test-type-section {
@@ -177,89 +250,29 @@ h1 {
     color: #ffffff;
 }
 
-.history-section {
-    margin-bottom: 25px;
-}
-
-.history-section h2 {
-    color: #ffffff;
-    margin-bottom: 15px;
-    font-size: 18px;
-}
-
-.history-dropdown {
-    width: 100%;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 6px;
-    padding: 10px;
-    color: #ffffff;
-    font-size: 14px;
-    margin-bottom: 10px;
-    cursor: pointer;
-}
-
-.history-dropdown:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-.history-dropdown option {
-    background: #2a2a2a;
-    color: #ffffff;
-}
-
-.project-dropdown {
-    width: 100%;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 6px;
-    padding: 10px;
-    color: #ffffff;
-    font-size: 14px;
-    margin-bottom: 15px;
-    cursor: pointer;
-}
-
-.project-dropdown:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-.project-dropdown option {
-    background: #2a2a2a;
-    color: #ffffff;
-}
-
-.test-history-subsection {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid #444;
-}
-
-.test-history-subsection h3 {
-    color: #ffffff;
-    margin-bottom: 10px;
-    font-size: 16px;
-    font-weight: normal;
-}
-
-.history-buttons {
-    display: flex;
-    gap: 8px;
-}
 
 .btn-small {
     padding: 8px 12px;
     font-size: 12px;
 }
 
-.export-section {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid #444;
+.privacy-notice {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 6px;
+    font-size: 12px;
+    color: #4CAF50;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.privacy-icon {
+    font-size: 14px;
 }
 
 .export-buttons {
@@ -567,54 +580,58 @@ h1 {
         color: #ffffff !important;
     }
     
-    .test-name-field {
-        background: #2a2a2a !important;
-        border: 1px solid #444 !important;
-        color: #ffffff !important;
-    }
-    
-    .test-name-field::placeholder {
-        color: #888 !important;
-    }
-    
     .project-field {
         background: #2a2a2a !important;
         border: 1px solid #444 !important;
         color: #ffffff !important;
     }
     
-    .project-field::placeholder {
+    .project-field::placeholder,
+    .test-location-field::placeholder {
         color: #888 !important;
     }
     
-    #project-datalist option {
-        background: #2a2a2a !important;
-        color: #ffffff !important;
-    }
-    
-    .history-dropdown {
+    .test-location-field {
         background: #2a2a2a !important;
         border: 1px solid #444 !important;
         color: #ffffff !important;
     }
     
-    .history-dropdown option {
+    #project-datalist option,
+    #location-datalist option {
         background: #2a2a2a !important;
         color: #ffffff !important;
     }
     
-    .project-dropdown {
-        background: #2a2a2a !important;
-        border: 1px solid #444 !important;
+    .field-group label {
         color: #ffffff !important;
     }
     
-    .project-dropdown option {
-        background: #2a2a2a !important;
+    .privacy-notice {
+        background: rgba(76, 175, 80, 0.1) !important;
+        border: 1px solid rgba(76, 175, 80, 0.3) !important;
+        color: #4CAF50 !important;
+    }
+    
+    .dataset-section {
+        background: rgba(76, 175, 80, 0.1) !important;
+        border: 1px solid rgba(76, 175, 80, 0.3) !important;
+    }
+    
+    .dataset-section h2 {
         color: #ffffff !important;
     }
     
-    .test-history-subsection h3 {
+    .dataset-name {
+        color: #4CAF50 !important;
+    }
+    
+    .dataset-description {
+        color: #888 !important;
+    }
+    
+    .clear-btn-small {
+        background: #555 !important;
         color: #ffffff !important;
     }
 }
@@ -629,7 +646,9 @@ h1 {
         grid-template-columns: 1fr;
     }
     
-    .buttons {
+    .buttons,
+    .export-buttons,
+    .save-buttons {
         flex-direction: column;
     }
 }
